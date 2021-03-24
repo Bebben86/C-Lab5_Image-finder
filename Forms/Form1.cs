@@ -56,7 +56,7 @@ namespace Forms
             {
                 for (int i = 0; i < resultList.Count; i++)
                 {
-                    if (resultList[i].Contains("http://") || resultList[i].Contains("https://"))
+                    if (resultList[i].Contains("http"))
                     {
                         continue;
                     }
@@ -69,7 +69,7 @@ namespace Forms
                 lb_Result.DataSource = resultList;
                 lbl_NumberOfFoundImages.Visible = true;
                 lbl_NumberOfFoundImages.Text = $"{resultList.Count} images found";
-
+                btn_Go.Enabled = false;
             }
 
         }
@@ -86,6 +86,7 @@ namespace Forms
 
         private void btn_SelectAll_Click(object sender, EventArgs e)
         {
+            //Markerar alla resultat i listboxen.
             //Varför fungerar inte lb_Result.SelectAll(); ???
             for (int i = 0; i < lb_Result.Items.Count; i++)
             {
@@ -96,7 +97,9 @@ namespace Forms
 
         private async void btn_DownloadImages_ClickAsync(object sender, EventArgs e)
         {
+            btn_Go.Enabled = false;
             var selectedPics = lb_Result.SelectedItems.Cast<string>().ToList();
+            
             if (lb_Result.SelectedItems.Count > 0)
             {
 
@@ -111,31 +114,25 @@ namespace Forms
                     string fileExtension = Regex.Match(url, @"(?<=\.)(jpg|jpeg|png|gif|bmp)(?=(""|\?|$))").Value;
                     downloads.Add(Task.Run(() => client.GetByteArrayAsync(url)), fileExtension);
                 }
-                if (downloads != null)
+
+                while (downloads.Count > 0)
                 {
+                    Task<byte[]> task = await Task.WhenAny(downloads.Keys);
 
-
-                    while (downloads.Count > 0)
+                    numOfPics++;
+                    if (task.Exception == null)
                     {
-                        Task<byte[]> task = await Task.WhenAny(downloads.Keys);
 
-                        numOfPics++;
-                        if (task.Exception == null)
-                        {
-
-                            string fileExtension = downloads[task];
-                            string fileName = $"Image{numOfPics,000}.{fileExtension}";
-                            string fullPath = Path.Combine(folder, fileName);
-                            await SaveImage(fullPath, task.Result);
-                            downloadedPics++;
-                            lbl_NumberOfFoundImages.Text = "Downloaded images: " + Convert.ToString(downloadedPics) + "/" + Convert.ToString(selectedPics.Count);
-                        }
-                        downloads.Remove(task);
+                        string fileExtension = downloads[task];
+                        string fileName = $"Image{numOfPics,000}.{fileExtension}";
+                        string fullPath = Path.Combine(folder, fileName);
+                        await SaveImage(fullPath, await task);
+                        downloadedPics++;
+                        lbl_NumberOfFoundImages.Text = "Downloaded images: " + Convert.ToString(downloadedPics) + "/" + Convert.ToString(selectedPics.Count);
                     }
-                }
-                else
-                {
-                    return;
+                    downloads.Remove(task);
+                    btn_Go.Enabled = true;
+                    
                 }
             }
 
@@ -143,9 +140,11 @@ namespace Forms
 
         private async Task SaveImage(string path, byte[] data)
         {
-            var fs = new FileStream(path, FileMode.Create);
-            await fs.WriteAsync(data, 0, data.Length);
-            fs.Close();
+            using (var fs = new FileStream(path, FileMode.Create))
+            {
+                await fs.WriteAsync(data, 0, data.Length);
+            }
+            
         }
         public string FolderPath()
         {
@@ -170,9 +169,6 @@ namespace Forms
             MessageBox.Show("Selected file(s) downloaded");
         }
 
-        private void lb_Result_SelectedIndexChanged(object sender, EventArgs e)
-        {
 
-        }
     }
 }

@@ -83,7 +83,7 @@ namespace Forms
             this.lb_Result.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
             this.lb_Result.Size = new System.Drawing.Size(774, 289);
             this.lb_Result.TabIndex = 4;
-            this.lb_Result.SelectedIndexChanged += new System.EventHandler(this.lb_Result_SelectedIndexChanged);
+            
             // 
             // groupBox1
             // 

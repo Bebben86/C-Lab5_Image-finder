@@ -1,7 +1,6 @@
 ﻿using Htmlhelper;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -27,14 +26,14 @@ namespace Forms
             InitializeComponent();
         }
 
-        private async void button1_Click(object sender, EventArgs e) //GO-button
+        private async void button1_Click(object sender, EventArgs e) //Extract-button, where the journey begins...
         {
-            string input = tb_URL.Text;
+            string input = "https://" + tb_URL.Text;
             if (input == "" || input == " ")
             {
                 MessageBox.Show("URL can't be empty.", "Warning",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                tb_URL.Text = "";
+                tb_URL.Text = "";                               //Clears the URL-field for user after message is shown.
                 return;
             }
 
@@ -54,6 +53,7 @@ namespace Forms
             }
             else
             {
+                //Adds the URL provided by the user if the item doesn't start with http*.
                 for (int i = 0; i < resultList.Count; i++)
                 {
                     if (resultList[i].Contains("http"))
@@ -62,21 +62,21 @@ namespace Forms
                     }
                     else
                     {
-                        resultList[i] = tb_URL.Text + resultList[i];
+                        resultList[i] = input + resultList[i];
                     }
                 }
 
-                lb_Result.DataSource = resultList;
-                lbl_NumberOfFoundImages.Visible = true;
-                lbl_NumberOfFoundImages.Text = $"{resultList.Count} images found";
-                btn_Go.Enabled = false;
+                lb_Result.DataSource = resultList; //Sets the list resultList as source for the listbox.
+                lbl_imageLable.Visible = true;
+                lbl_imageLable.Text = $"{resultList.Count} images found";
+
             }
 
         }
 
         private void btn_ClearSelection_Click(object sender, EventArgs e)
         {
-            lb_Result.ClearSelected();
+            lb_Result.ClearSelected(); //De-select selected items.
         }
 
         private void groupBox1_Enter(object sender, EventArgs e)
@@ -86,8 +86,8 @@ namespace Forms
 
         private void btn_SelectAll_Click(object sender, EventArgs e)
         {
-            //Markerar alla resultat i listboxen.
-            //Varför fungerar inte lb_Result.SelectAll(); ???
+            //Selects all items in the list box.
+            //lb_Result.SelectAll(); doesn't work. Why?
             for (int i = 0; i < lb_Result.Items.Count; i++)
             {
                 lb_Result.SetSelected(i, true);
@@ -95,11 +95,11 @@ namespace Forms
 
         }
 
-        private async void btn_DownloadImages_ClickAsync(object sender, EventArgs e)
+        private async void btn_DownloadImages_ClickAsync(object sender, EventArgs e) //Download button, where the journey ends.
         {
-            btn_Go.Enabled = false;
+            btn_extract.Enabled = false; //Disables the GO-button so the user can't change URL in the middle of saving pictures.
             var selectedPics = lb_Result.SelectedItems.Cast<string>().ToList();
-            
+
             if (lb_Result.SelectedItems.Count > 0)
             {
 
@@ -108,6 +108,7 @@ namespace Forms
                 string folder = FolderPath();
                 int numOfPics = 0;
                 int downloadedPics = 0;
+
 
                 foreach (var url in selectedPics)
                 {
@@ -124,27 +125,39 @@ namespace Forms
                     {
 
                         string fileExtension = downloads[task];
-                        string fileName = $"Image{numOfPics,000}.{fileExtension}";
+                        string fileName = $"Image{numOfPics,000}.{fileExtension}"; //Decides the name and filetype the saved file will have.
                         string fullPath = Path.Combine(folder, fileName);
-                        await SaveImage(fullPath, await task);
+                        await SavePic(fullPath, task.Result);
                         downloadedPics++;
-                        lbl_NumberOfFoundImages.Text = "Downloaded images: " + Convert.ToString(downloadedPics) + "/" + Convert.ToString(selectedPics.Count);
+                        lbl_imageLable.Text = "Saved images: " + Convert.ToString(downloadedPics) +
+                           " of " + Convert.ToString(selectedPics.Count) + " selected";
                     }
                     downloads.Remove(task);
-                    btn_Go.Enabled = true;
-                    
+
                 }
+                if (downloadedPics.ToString() != selectedPics.ToString())
+                {
+                    MessageBox.Show("Couldn't download all the selected images.", "Attention",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show("All images downloaded!", "Success",
+                    MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                }
+
             }
+            //Re-enables the GO-button after task is completed.
+            btn_extract.Enabled = true;
 
         }
 
-        private async Task SaveImage(string path, byte[] data)
+        private async Task SavePic(string path, byte[] data)
         {
-            using (var fs = new FileStream(path, FileMode.Create))
+            using (var fs = new FileStream(path, FileMode.Create)) //Writes the bytes to files
             {
                 await fs.WriteAsync(data, 0, data.Length);
             }
-            
         }
         public string FolderPath()
         {
@@ -159,16 +172,11 @@ namespace Forms
                 }
                 else
                 {
+                    MessageBox.Show("Path can't be empty. Program will now exit."); //Avoiding crash by closing the application.
+                    Close();
                     return null;
                 }
             }
         }
-
-        void wc_DownloadFilesCompleted(object sender, AsyncCompletedEventArgs e)
-        {
-            MessageBox.Show("Selected file(s) downloaded");
-        }
-
-
     }
 }

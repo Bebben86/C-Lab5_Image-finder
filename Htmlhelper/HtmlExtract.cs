@@ -14,16 +14,16 @@ namespace Htmlhelper
             HttpClient client = new HttpClient();
             HttpResponseMessage response = await client.GetAsync(url)
                 .ConfigureAwait(false);
-            response.EnsureSuccessStatusCode(); // Code 2xx is good.
+            response.EnsureSuccessStatusCode(); // Code 2xx = all is good.
             string responseBody = await response.Content.ReadAsStringAsync();
-            List<string> listvalues = seperateValues(responseBody);
+            List<string> listvalues = separateValues(responseBody);
             return listvalues;
         }
 
-        public List<string> seperateValues(string s)
+        public List<string> separateValues(string s)
         {
             List<string> list = new List<string>();
-            string regexImgSrc= @"<img[^>]*?src\s*=\s*[""']?([^'"" >]+?)[ '""][^>]*?>";
+            string regexImgSrc= @"<img[^>]*?src\s*=\s*[""']?([^'"" >]+?)[ '""][^>]*?>"; //RegEx looking for img-matches
             MatchCollection collection =
                 Regex.Matches(s, regexImgSrc, RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
             foreach (Match item in collection)

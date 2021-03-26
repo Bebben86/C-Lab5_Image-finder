@@ -97,7 +97,7 @@ namespace Forms
 
         private async void btn_DownloadImages_ClickAsync(object sender, EventArgs e) //Download button, where the journey ends.
         {
-            btn_extract.Enabled = false; //Disables the GO-button so the user can't change URL in the middle of saving pictures.
+            btn_extract.Enabled = false; //Disables the extract-button so the user can't change URL in the middle of saving pictures.
             var selectedPics = lb_Result.SelectedItems.Cast<string>().ToList();
 
             if (lb_Result.SelectedItems.Count > 0)
@@ -108,6 +108,7 @@ namespace Forms
                 string folder = FolderPath();
                 int numOfPics = 0;
                 int downloadedPics = 0;
+                
 
 
                 foreach (var url in selectedPics)
@@ -133,11 +134,11 @@ namespace Forms
                            " of " + Convert.ToString(selectedPics.Count) + " selected";
                     }
                     downloads.Remove(task);
-
+                    
                 }
-                if (downloadedPics.ToString() != selectedPics.ToString())
+                if (Convert.ToString(downloadedPics) != Convert.ToString(selectedPics.Count))
                 {
-                    MessageBox.Show("Couldn't download all the selected images.", "Attention",
+                    MessageBox.Show($"Done. \nCouldn't download all of the selected images.", "Attention",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 else
@@ -147,7 +148,7 @@ namespace Forms
                 }
 
             }
-            //Re-enables the GO-button after task is completed.
+            //Re-enables the extract-button after task is completed.
             btn_extract.Enabled = true;
 
         }
